@@ -118,9 +118,14 @@ class In_3D_ComptonImager : public TFileMaker{
 //        void MakeSyncCompImage();
         void MakePETImage();
 
+        double CalTotalWeight();
+
         bool boolMake3DImage, boolMakePETImage, boolMakeCompImage;
 
         double gauss_FWHM;
+        double totalweight;
+
+        double rescale_factor;
 
     protected:
 

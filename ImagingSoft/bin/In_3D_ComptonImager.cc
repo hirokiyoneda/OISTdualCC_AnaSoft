@@ -97,6 +97,7 @@ void In_3D_ComptonImager::SetDefault(){
     boolMakePETImage = true;
 
     gauss_FWHM = AnalysisParameter::GaussFWHM;
+    rescale_factor = 1e-6;
 }
 
 void In_3D_ComptonImager::PrintPar(){
@@ -522,7 +523,26 @@ void In_3D_ComptonImager::MakeImage(){
 
 void In_3D_ComptonImager::Make3DImage(){
     if(!ThreeDImageFilter()) return;
-    
+
+    tmp_image_3d = new TH3F("tmp_image_3d", "tmp_image_3d", 
+                        n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
+                        n_y, world_y - world_ly/2.0, world_y + world_ly/2.0, 
+                        n_z, world_z - world_lz/2.0, world_z + world_lz/2.0
+                        );
+    tmp_projectionXY_image_3d = new TH2F("tmp_projectionXY_image_3d", "tmp_projectionXY_image_3d", 
+                        n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
+                        n_y, world_y - world_ly/2.0, world_y + world_ly/2.0
+                        );
+    tmp_projectionZX_image_3d = new TH2F("tmp_projectionZX_image_3d", "tmp_projectionZX_image_3d", 
+                        n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
+                        n_x, world_x - world_lx/2.0, world_x + world_lx/2.0
+                        );
+    tmp_projectionZY_image_3d = new TH2F("tmp_projectionZY_image_3d", "tmp_projectionZY_image_3d", 
+                        n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
+                        n_y, world_y - world_ly/2.0, world_y + world_ly/2.0
+                        );
+   
+    totalweight = 0;
     for(int i_x = 0; i_x < n_x; ++i_x){
         for(int i_y = 0; i_y < n_y; ++i_y){
             for(int i_z = 0; i_z < n_z; ++i_z){
@@ -535,15 +555,26 @@ void In_3D_ComptonImager::Make3DImage(){
                 double weight = 1.0;
                 weight *= CalCompWeight(fillpoint, c1_pos, c1_vecG, c1_costheta, c1_dtheta);
                 weight *= CalCompWeight(fillpoint, c2_pos, c2_vecG, c2_costheta, c2_dtheta);
+                totalweight += weight;
 
-                image_3d->Fill(fillpoint.X(), fillpoint.Y(), fillpoint.Z(), weight);
-                projectionXY_image_3d->Fill(fillpoint.X(), fillpoint.Y(), weight);
-                projectionZX_image_3d->Fill(fillpoint.Z(), fillpoint.X(), weight);
-                projectionZY_image_3d->Fill(fillpoint.Z(), fillpoint.Y(), weight);
+                tmp_image_3d->Fill(fillpoint.X(), fillpoint.Y(), fillpoint.Z(), weight);
+                tmp_projectionXY_image_3d->Fill(fillpoint.X(), fillpoint.Y(), weight);
+                tmp_projectionZX_image_3d->Fill(fillpoint.Z(), fillpoint.X(), weight);
+                tmp_projectionZY_image_3d->Fill(fillpoint.Z(), fillpoint.Y(), weight);
             }
         }
     }
 
+    totalweight *= rescale_factor;
+    tmp_image_3d->Scale(1.0/totalweight);
+    tmp_projectionXY_image_3d->Scale(1.0/totalweight);
+    tmp_projectionZX_image_3d->Scale(1.0/totalweight);
+    tmp_projectionZY_image_3d->Scale(1.0/totalweight);
+    
+    image_3d->Add(tmp_image_3d);
+    projectionXY_image_3d->Add(tmp_projectionXY_image_3d);
+    projectionZX_image_3d->Add(tmp_projectionZX_image_3d);
+    projectionZY_image_3d->Add(tmp_projectionZY_image_3d);
 }
 
 /*
@@ -564,9 +595,34 @@ double In_3D_ComptonImager::CalWeight(TVector3 comp_point, TVector3 start_point,
 
 void In_3D_ComptonImager::MakeCompImage(){
     if(!CompImageFilter()) return;
+    totalweight = CalTotalWeight()*rescale_factor;
+    cout << totalweight << " " << 1.0/totalweight << endl;
     MakeCompImageXY();
     MakeCompImageZX();
     MakeCompImageZY();
+}
+
+double In_3D_ComptonImager::CalTotalWeight(){
+    double totalweight = 0;
+    for(int i_x = 0; i_x < comp_n_x; ++i_x){
+        for(int i_y = 0; i_y < comp_n_y; ++i_y){
+            for(int i_z = 0; i_z < comp_n_z; ++i_z){
+                TVector3 fillpoint(
+                world_x - world_lx/2.0 + world_lx/n_x*(i_x + 0.5),
+                world_y - world_ly/2.0 + world_ly/n_y*(i_y + 0.5),
+                world_z - world_lz/2.0 + world_lz/n_z*(i_z + 0.5)
+                );
+
+                double weight = 1.0;
+                weight *= CalCompWeight(fillpoint, c1_pos, c1_vecG, c1_costheta, c1_dtheta);
+                weight *= CalCompWeight(fillpoint, c2_pos, c2_vecG, c2_costheta, c2_dtheta);
+                
+                totalweight += weight;
+            }
+        }
+    }
+    
+    return totalweight;
 }
 
 void In_3D_ComptonImager::MakeCompImageXY(){
@@ -598,6 +654,8 @@ void In_3D_ComptonImager::MakeCompImageXY(){
     arm_compimage_c2->Fill(diff_angle_c2);
 
     TH2F add2dhist_c1c2 = (*this_compimage_c1)*(*this_compimage_c2);
+
+    add2dhist_c1c2.Scale(1.0/totalweight);
     
     compimage_c1c2->Add(&add2dhist_c1c2);
 
@@ -628,6 +686,8 @@ void In_3D_ComptonImager::MakeCompImageZX(){
     compimage_c2_ZX->Add(this_compimage_c2_ZX);
 
     TH2F add2dhist_c1c2_ZX = (*this_compimage_c1_ZX)*(*this_compimage_c2_ZX);
+
+    add2dhist_c1c2_ZX.Scale(1.0/totalweight);
     
     compimage_c1c2_ZX->Add(&add2dhist_c1c2_ZX);
 
@@ -656,6 +716,8 @@ void In_3D_ComptonImager::MakeCompImageZY(){
     compimage_c2_ZY->Add(this_compimage_c2_ZY);
 
     TH2F add2dhist_c1c2_ZY = (*this_compimage_c1_ZY)*(*this_compimage_c2_ZY);
+
+    add2dhist_c1c2_ZY.Scale(1.0/totalweight);
     
     compimage_c1c2_ZY->Add(&add2dhist_c1c2_ZY);
 
