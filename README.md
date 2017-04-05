@@ -1,8 +1,8 @@
 This is Analysis Soft for Dual Compton Cameras Experiment @ OIST.
 v1.0.0 written by Hiroki Yoneda -- 2017 04 05
 --------
-Normalization
-v1.1.0 written by Hiroki Yoneda -- 2017 04 05
+add parameter "gauss_FWHM" in parameter file
+v1.0.1 written by Hiroki Yoneda -- 2017 04 05
 
 ====== install ======
 
