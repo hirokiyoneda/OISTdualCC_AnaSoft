@@ -28,13 +28,14 @@ message ("-- ROOT libraries : ${ROOT_LIBRARIES}")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-execute_process(
-COMMAND mdfind -name libInSoft.a
-COMMAND grep src
-OUTPUT_VARIABLE libInSoft_DIR
-OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+#execute_process(
+#COMMAND mdfind -name libInSoft.a
+#COMMAND grep src
+#OUTPUT_VARIABLE libInSoft_DIR
+#OUTPUT_STRIP_TRAILING_WHITESPACE
+#)
 
+set(libInSoft_DIR ${CMAKE_SOURCE_DIR}/../share/build/src/libInSoft.a)
 include_directories(${CMAKE_SOURCE_DIR}/../share/include)
 
 add_subdirectory(bin)
