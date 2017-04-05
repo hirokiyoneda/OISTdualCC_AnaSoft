@@ -97,7 +97,9 @@ void In_3D_ComptonImager::SetDefault(){
     boolMakePETImage = true;
 
     gauss_FWHM = AnalysisParameter::GaussFWHM;
-    rescale_factor = 1e-6;
+    rescale_factor = AnalysisParameter::rescale_factor;
+    cut_totalweight = AnalysisParameter::cut_totalweight;
+
 }
 
 void In_3D_ComptonImager::PrintPar(){
@@ -524,20 +526,20 @@ void In_3D_ComptonImager::MakeImage(){
 void In_3D_ComptonImager::Make3DImage(){
     if(!ThreeDImageFilter()) return;
 
-    tmp_image_3d = new TH3F("tmp_image_3d", "tmp_image_3d", 
+    TH3F *tmp_image_3d = new TH3F("tmp_image_3d", "tmp_image_3d", 
                         n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
                         n_y, world_y - world_ly/2.0, world_y + world_ly/2.0, 
                         n_z, world_z - world_lz/2.0, world_z + world_lz/2.0
                         );
-    tmp_projectionXY_image_3d = new TH2F("tmp_projectionXY_image_3d", "tmp_projectionXY_image_3d", 
+    TH2F *tmp_projectionXY_image_3d = new TH2F("tmp_projectionXY_image_3d", "tmp_projectionXY_image_3d", 
                         n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
                         n_y, world_y - world_ly/2.0, world_y + world_ly/2.0
                         );
-    tmp_projectionZX_image_3d = new TH2F("tmp_projectionZX_image_3d", "tmp_projectionZX_image_3d", 
+    TH2F *tmp_projectionZX_image_3d = new TH2F("tmp_projectionZX_image_3d", "tmp_projectionZX_image_3d", 
                         n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
                         n_x, world_x - world_lx/2.0, world_x + world_lx/2.0
                         );
-    tmp_projectionZY_image_3d = new TH2F("tmp_projectionZY_image_3d", "tmp_projectionZY_image_3d", 
+    TH2F *tmp_projectionZY_image_3d = new TH2F("tmp_projectionZY_image_3d", "tmp_projectionZY_image_3d", 
                         n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
                         n_y, world_y - world_ly/2.0, world_y + world_ly/2.0
                         );
@@ -596,6 +598,7 @@ double In_3D_ComptonImager::CalWeight(TVector3 comp_point, TVector3 start_point,
 void In_3D_ComptonImager::MakeCompImage(){
     if(!CompImageFilter()) return;
     totalweight = CalTotalWeight()*rescale_factor;
+    if(totalweight < cut_totalweight) return;
     cout << totalweight << " " << 1.0/totalweight << endl;
     MakeCompImageXY();
     MakeCompImageZX();

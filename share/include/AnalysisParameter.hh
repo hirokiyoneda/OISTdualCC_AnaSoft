@@ -13,6 +13,10 @@ namespace AnalysisParameter{
     const double CompImageW = 0;
 
     const double CompImageSigmaCut= 5.0;
+
+    const double rescale_factor = 1.0;
+    const double cut_totalweight = 100;
+    
 }
 
 #endif

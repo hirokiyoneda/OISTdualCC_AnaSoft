@@ -126,6 +126,7 @@ class In_3D_ComptonImager : public TFileMaker{
         double totalweight;
 
         double rescale_factor;
+        double cut_totalweight;
 
     protected:
 
