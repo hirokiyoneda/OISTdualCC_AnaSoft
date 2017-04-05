@@ -1,0 +1,16 @@
+{
+   "CC1":
+   {
+       "parallel_translation_x": 0.0,
+       "parallel_translation_y": 0.029,
+       "parallel_translation_z": -4.135,
+       "rotate_angle_in_deg":1.56 
+   },
+   "CC2":
+   {
+       "parallel_translation_x": 0.0,
+       "parallel_translation_y": 0.020,
+       "parallel_translation_z": -4.135,
+       "rotate_angle_in_deg": 179.71
+   }
+}
