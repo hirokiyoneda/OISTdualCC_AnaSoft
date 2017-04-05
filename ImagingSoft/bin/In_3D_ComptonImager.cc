@@ -95,6 +95,8 @@ void In_3D_ComptonImager::SetDefault(){
     boolMake3DImage = true;
     boolMakeCompImage = true;
     boolMakePETImage = true;
+
+    gauss_FWHM = AnalysisParameter::GaussFWHM;
 }
 
 void In_3D_ComptonImager::PrintPar(){
@@ -155,6 +157,8 @@ void In_3D_ComptonImager::PrintPar(){
     << pet_n_y << " "
     << endl;
     }
+
+    cout << "gauss_FWHM : " << gauss_FWHM << endl;
 }
 
 void In_3D_ComptonImager::LoadParameterFile(string parfilename){
@@ -211,6 +215,10 @@ void In_3D_ComptonImager::LoadParameterFile(string parfilename){
         par_tree.get<int>("PETImage.bin.x"),
         par_tree.get<int>("PETImage.bin.y")
     );
+
+    SetGaussFWHM(
+        par_tree.get<double>("gaussFWHM", -1)
+    );
 }
 
 void In_3D_ComptonImager::SetWorldPosition(double world_x, double world_y, double world_z){
@@ -264,6 +272,12 @@ void In_3D_ComptonImager::SetCompImageDivision(int comp_n_x, int comp_n_y, int c
 void In_3D_ComptonImager::SetPETImageDivision(int pet_n_x, int pet_n_y){
     this->pet_n_x = pet_n_x;
     this->pet_n_y = pet_n_y;
+}
+
+void In_3D_ComptonImager::SetGaussFWHM(double gauss_FWHM){
+    if(gauss_FWHM > 0){
+        this->gauss_FWHM = gauss_FWHM;
+    }
 }
 
 void In_3D_ComptonImager::SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage, bool boolMakePETImage){
@@ -472,7 +486,6 @@ bool In_3D_ComptonImager::GetNextEvent(){
 }
 
 void In_3D_ComptonImager::PrintNow(){
-    //if(c1_current_event_num%AnalysisParameter::PrintDivNum == 0){
     if(c1_current_event_num%print_div_num == 0){
         cout << c1_current_event_num << " / " << c1_total_event_num << endl;
     }
@@ -762,7 +775,7 @@ void In_3D_ComptonImager::SetCompImageCalPar(int n_cam, double &costheta, double
 }
 
 double In_3D_ComptonImager::CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta){
-	double sigma = TMath::Pi()/180.0*(AnalysisParameter::GaussFWHM/2.355);
+	double sigma = TMath::Pi()/180.0*(gauss_FWHM/2.355);
     double  thetaE =  TMath::ACos(costheta);
 
     TVector3 light_direction = comp_point - start_point;

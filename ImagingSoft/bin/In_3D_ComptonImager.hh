@@ -120,6 +120,8 @@ class In_3D_ComptonImager : public TFileMaker{
 
         bool boolMake3DImage, boolMakePETImage, boolMakeCompImage;
 
+        double gauss_FWHM;
+
     protected:
 
     public:
@@ -147,6 +149,7 @@ class In_3D_ComptonImager : public TFileMaker{
         void Set3DImageDivision(int n_x, int n_y, int n_z);
         void SetCompImageDivision(int comp_n_x, int comp_n_y, int comp_n_z);
         void SetPETImageDivision(int pet_n_x, int pet_n_y);
+        void SetGaussFWHM(double gauss_FWHM);
 
         void SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage, bool boolMakePETImage);
 
