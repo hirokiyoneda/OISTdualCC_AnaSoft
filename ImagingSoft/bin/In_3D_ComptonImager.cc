@@ -568,6 +568,8 @@ void In_3D_ComptonImager::Make3DImage(){
     }
 
     totalweight *= rescale_factor;
+    if(totalweight < cut_totalweight) return;
+
     tmp_image_3d->Scale(1.0/totalweight);
     tmp_projectionXY_image_3d->Scale(1.0/totalweight);
     tmp_projectionZX_image_3d->Scale(1.0/totalweight);
@@ -577,6 +579,11 @@ void In_3D_ComptonImager::Make3DImage(){
     projectionXY_image_3d->Add(tmp_projectionXY_image_3d);
     projectionZX_image_3d->Add(tmp_projectionZX_image_3d);
     projectionZY_image_3d->Add(tmp_projectionZY_image_3d);
+
+    delete tmp_image_3d;
+    delete tmp_projectionXY_image_3d;
+    delete tmp_projectionZX_image_3d;
+    delete tmp_projectionZY_image_3d;
 }
 
 /*
