@@ -96,7 +96,8 @@ void In_3D_ComptonImager::SetDefault(){
     boolMakeCompImage = true;
     boolMakePETImage = true;
 
-    gauss_FWHM = AnalysisParameter::GaussFWHM;
+    gauss_FWHM_171keV = AnalysisParameter::GaussFWHM;
+    gauss_FWHM_245keV = AnalysisParameter::GaussFWHM;
 }
 
 void In_3D_ComptonImager::PrintPar(){
@@ -158,7 +159,8 @@ void In_3D_ComptonImager::PrintPar(){
     << endl;
     }
 
-    cout << "gauss_FWHM : " << gauss_FWHM << endl;
+    cout << "gauss FWHM 171keV : " << gauss_FWHM_171keV << endl;
+    cout << "gauss FWHM 245keV : " << gauss_FWHM_245keV << endl;
 }
 
 void In_3D_ComptonImager::LoadParameterFile(string parfilename){
@@ -217,7 +219,8 @@ void In_3D_ComptonImager::LoadParameterFile(string parfilename){
     );
 
     SetGaussFWHM(
-        par_tree.get<double>("gaussFWHM", -1)
+        par_tree.get<double>("gaussFWHM.171keV", -1),
+        par_tree.get<double>("gaussFWHM.245keV", -1)
     );
 }
 
@@ -274,9 +277,13 @@ void In_3D_ComptonImager::SetPETImageDivision(int pet_n_x, int pet_n_y){
     this->pet_n_y = pet_n_y;
 }
 
-void In_3D_ComptonImager::SetGaussFWHM(double gauss_FWHM){
-    if(gauss_FWHM > 0){
-        this->gauss_FWHM = gauss_FWHM;
+void In_3D_ComptonImager::SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV){
+    if(gauss_FWHM_171keV > 0){
+        this->gauss_FWHM_171keV = gauss_FWHM_171keV;
+    }
+
+    if(gauss_FWHM_245keV > 0){
+        this->gauss_FWHM_245keV = gauss_FWHM_245keV;
     }
 }
 
@@ -533,8 +540,8 @@ void In_3D_ComptonImager::Make3DImage(){
                 );
 
                 double weight = 1.0;
-                weight *= CalCompWeight(fillpoint, c1_pos, c1_vecG, c1_costheta, c1_dtheta);
-                weight *= CalCompWeight(fillpoint, c2_pos, c2_vecG, c2_costheta, c2_dtheta);
+                weight *= CalCompWeight(fillpoint, c1_pos, c1_vecG, c1_costheta, c1_dtheta, e1);
+                weight *= CalCompWeight(fillpoint, c2_pos, c2_vecG, c2_costheta, c2_dtheta, e2);
 
                 image_3d->Fill(fillpoint.X(), fillpoint.Y(), fillpoint.Z(), weight);
                 projectionXY_image_3d->Fill(fillpoint.X(), fillpoint.Y(), weight);
@@ -674,9 +681,9 @@ void In_3D_ComptonImager::MakePETImage(){
 }
 
 void In_3D_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, double &diff_angle){
-	double costheta, dtheta;
+	double costheta, dtheta, e;
 	TVector3 axis, inipos;
-    SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos);
+    SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos, e);
 
 #ifdef CutPoint
 	if(costheta < -1 || 1 < costheta) return;
@@ -690,7 +697,7 @@ void In_3D_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, 
             slice_z
             );
             
-            double weight = CalCompWeight(fillpoint, inipos, axis, costheta, dtheta);
+            double weight = CalCompWeight(fillpoint, inipos, axis, costheta, dtheta, e);
             if(weight > 0){
                 compimage->Fill(fillpoint.X(), fillpoint.Y(), weight);
             }
@@ -708,9 +715,9 @@ void In_3D_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, 
 }
 
 void In_3D_ComptonImager::MakeCompImageEachCameraZX(int n_cam, TH2F *compimage){
-	double costheta, dtheta;
+	double costheta, dtheta, e;
 	TVector3 axis, inipos;
-    SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos);
+    SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos, e);
 
 #ifdef CutPoint
 	if(costheta < -1 || 1 < costheta) return;
@@ -724,7 +731,7 @@ void In_3D_ComptonImager::MakeCompImageEachCameraZX(int n_cam, TH2F *compimage){
             world_z - world_lz/2.0 + world_lz/comp_n_z*(i_z + 0.5)
             );
             
-            double weight = CalCompWeight(fillpoint, inipos, axis, costheta, dtheta);
+            double weight = CalCompWeight(fillpoint, inipos, axis, costheta, dtheta, e);
             if(weight > 0){
                 compimage->Fill(fillpoint.Z(), fillpoint.X(), weight);
             }
@@ -733,9 +740,9 @@ void In_3D_ComptonImager::MakeCompImageEachCameraZX(int n_cam, TH2F *compimage){
 }
 
 void In_3D_ComptonImager::MakeCompImageEachCameraZY(int n_cam, TH2F *compimage){
-	double costheta, dtheta;
+	double costheta, dtheta, e;
 	TVector3 axis, inipos;
-    SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos);
+    SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos, e);
 
 #ifdef CutPoint
 	if(costheta < -1 || 1 < costheta) return;
@@ -749,7 +756,7 @@ void In_3D_ComptonImager::MakeCompImageEachCameraZY(int n_cam, TH2F *compimage){
             world_z - world_lz/2.0 + world_lz/comp_n_z*(i_z + 0.5)
             );
             
-            double weight = CalCompWeight(fillpoint, inipos, axis, costheta, dtheta);
+            double weight = CalCompWeight(fillpoint, inipos, axis, costheta, dtheta, e);
             if(weight > 0){
                 compimage->Fill(fillpoint.Z(), fillpoint.Y(), weight);
             }
@@ -757,25 +764,35 @@ void In_3D_ComptonImager::MakeCompImageEachCameraZY(int n_cam, TH2F *compimage){
     }
 }
 
-void In_3D_ComptonImager::SetCompImageCalPar(int n_cam, double &costheta, double &dtheta, TVector3 &axis, TVector3 &inipos){
+void In_3D_ComptonImager::SetCompImageCalPar(int n_cam, double &costheta, double &dtheta, TVector3 &axis, TVector3 &inipos, double &e){
     if(n_cam == 1){
         costheta = c1_costheta;
         dtheta = c1_dtheta;
         axis = c1_vecG;
         inipos = c1_pos;
+        e = e1;
     }else if(n_cam == 2){
         costheta = c2_costheta;
         dtheta = c2_dtheta;
         axis = c2_vecG;
         inipos = c2_pos;
+        e = e2;
     }else{
         cerr << "input wrong parameter" << endl;
         return;
     }
 }
 
-double In_3D_ComptonImager::CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta){
-	double sigma = TMath::Pi()/180.0*(gauss_FWHM/2.355);
+double In_3D_ComptonImager::CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta, double e){
+	double sigma;
+    if(check_line(e) == 1){
+	    sigma = TMath::Pi()/180.0*(gauss_FWHM_171keV/2.355);
+    }else if(check_line(e) == 2){
+	    sigma = TMath::Pi()/180.0*(gauss_FWHM_245keV/2.355);
+    }else{
+        cerr << "error in calculation of filling weight." << endl;
+    }
+
     double  thetaE =  TMath::ACos(costheta);
 
     TVector3 light_direction = comp_point - start_point;
@@ -871,15 +888,9 @@ bool In_3D_ComptonImager::ThreeDImageFilter(){
 }
 
 bool In_3D_ComptonImager::CompImageFilter(){
-    if( 
-       (TMath::Abs(e1 - In111Constant::EneLine1) < AnalysisParameter::DeltaE && TMath::Abs(e2 - In111Constant::EneLine2) < AnalysisParameter::DeltaE)
-       ||
-    ( TMath::Abs(e1 - In111Constant::EneLine2) < AnalysisParameter::DeltaE && TMath::Abs(e2 - In111Constant::EneLine1) < AnalysisParameter::DeltaE)
-    ){
-           //if(c1_costheta > 0.8 && c2_costheta > 0.8) return true;
+    if(check_line(e1)*check_line(e2) == 2){
            return true;
     }
-
     return false;
 }
 
@@ -890,4 +901,13 @@ bool In_3D_ComptonImager::PETFilter(){
 
 void In_3D_ComptonImager::SetPrintDivNum(Long64_t print_div_num){
     this->print_div_num = print_div_num;
+}
+
+int In_3D_ComptonImager::check_line(double e){ //0 : no line, 1 : 171 keV, 2 : 245 keV
+    if( TMath::Abs(e - In111Constant::EneLine1) < AnalysisParameter::DeltaE ){
+        return 1; 
+    }else if(TMath::Abs(e - In111Constant::EneLine2) < AnalysisParameter::DeltaE){
+        return 2;
+    }
+    return 0;
 }

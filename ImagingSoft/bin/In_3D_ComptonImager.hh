@@ -95,12 +95,14 @@ class In_3D_ComptonImager : public TFileMaker{
         bool ThreeDImageFilter();
         bool CompImageFilter();
         bool PETFilter();
+        int check_line(double e);
 
         //double CalWeight(TVector3 comp_point, TVector3 start_point, TVector3 vecG, double costheta, double dtheta);
 
-        void SetCompImageCalPar(int n_cam, double &costheta, double &dtheta, TVector3 &axis, TVector3 &inipos);
+        void SetCompImageCalPar(int n_cam, double &costheta, double &dtheta, TVector3 &axis, TVector3 &inipos, double &e);
 //        double CalCompWeight(TVector3 light_direction, TVector3 axis, double thetaE, double sigma);
-        double CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta);
+//        double CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta);
+        double CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta, double e);
 
         void GetExpValue();
         void FillEnergy();
@@ -120,7 +122,8 @@ class In_3D_ComptonImager : public TFileMaker{
 
         bool boolMake3DImage, boolMakePETImage, boolMakeCompImage;
 
-        double gauss_FWHM;
+        double gauss_FWHM_171keV;
+        double gauss_FWHM_245keV;
 
     protected:
 
@@ -149,7 +152,7 @@ class In_3D_ComptonImager : public TFileMaker{
         void Set3DImageDivision(int n_x, int n_y, int n_z);
         void SetCompImageDivision(int comp_n_x, int comp_n_y, int comp_n_z);
         void SetPETImageDivision(int pet_n_x, int pet_n_y);
-        void SetGaussFWHM(double gauss_FWHM);
+        void SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV);
 
         void SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage, bool boolMakePETImage);
 
