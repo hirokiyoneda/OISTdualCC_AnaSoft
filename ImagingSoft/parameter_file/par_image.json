@@ -25,7 +25,7 @@
     },
     "sliceplane":{
         "x":0,
-        "y":-0.7,
+        "y":0.3,
         "z":0
     },
     "3DComptonImage":{
@@ -39,9 +39,9 @@
     "SliceComptonImage":{
         "run":1,
         "bin":{
-            "x":200,
-            "y":200,
-            "z":200
+            "x":100,
+            "y":100,
+            "z":100
         }
     },
     "PETImage":{
@@ -51,5 +51,21 @@
             "y":1000
         }
     },
-    "gaussFWHM":10.0
+    "Normalization":{
+        "run":0,
+        "bin":{
+            "x":100,
+            "y":100,
+            "z":100
+        },
+        "rescale":1.0,
+        "cut":{
+            "min":1.0,
+            "max":10000000
+        }
+    },
+    "gaussFWHM":{
+        "171keV":3.2,
+        "245keV":5.3
+    }
 }
