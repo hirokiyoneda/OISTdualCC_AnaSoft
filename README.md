@@ -4,10 +4,8 @@
 ###### v1.0.0 by Hiroki Yoneda -- 2017 04 05
 ###### v1.0.1 by Hiroki Yoneda -- 2017 04 05
 - add parameter "gauss_FWHM" in parameter file
-###### v1.1.0_dev by Hiroki Yoneda -- 2017 04 05
-- renormazalition function is option.
-###### v1.1.1_dev by Hiroki Yoneda -- 2017 04 06
-- renormazalition function is option.
+###### v1.1.0_dev by Hiroki Yoneda -- 2017 04 06
+- renormazalition function is added (optional).
 - gauss_FWHM depends on photon energy
 --------
 ### install
