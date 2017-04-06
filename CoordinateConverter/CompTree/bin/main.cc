@@ -17,7 +17,7 @@ void DescribeInputParameters();
 int GetCameraNum(string cameraname);
 
 int main(int argc, char** argv){
-    if(argc < 4){
+    if(argc < 5){
         DescribeInputParameters();
         return -1;
     }
@@ -27,6 +27,11 @@ int main(int argc, char** argv){
     string cameraname = argv[3];
 
     CompTreeCoordinateConverter *converter = new CompTreeCoordinateConverter();
+
+    if(argc == 5){
+        TString header = argv[4];
+        converter->SetOutfileHeader(header);
+    }
 
     converter->SetPrintDivNum(10000);
     
@@ -74,6 +79,7 @@ void DescribeInputParameters(){
     cout << "1 : rootfilename (including cetree)" << endl;
     cout << "2 : parameter file (.json)" << endl;
     cout << "3 : cameraname(ex. 1 or cam1 or cc1 or camera1)" << endl;
+    cout << "4 : (option) outfile header" << endl;
 }
 
 int GetCameraNum(string cameraname){
