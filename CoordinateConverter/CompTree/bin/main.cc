@@ -17,7 +17,7 @@ void DescribeInputParameters();
 int GetCameraNum(string cameraname);
 
 int main(int argc, char** argv){
-    if(argc < 5){
+    if(argc < 4){
         DescribeInputParameters();
         return -1;
     }
