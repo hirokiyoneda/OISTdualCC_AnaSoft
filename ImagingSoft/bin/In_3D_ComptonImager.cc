@@ -428,7 +428,7 @@ void In_3D_ComptonImager::Initialize(){
     compimage_c2_ZY = new TH2F("compimage_c2_ZY", "compimage_c2_ZY;Z (cm);Y (cm)", 
             comp_n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    compimage_c1c2_ZY = new TH2F("compimage_c1c2_ZY", "compimage_c1c2_Z;Z (cm);Y (cm)Y", 
+    compimage_c1c2_ZY = new TH2F("compimage_c1c2_ZY", "compimage_c1c2_Z;Z (cm);Y (cm)", 
             comp_n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
     compimage_c1c2_ZY_multiply_non_coinimage = new TH2F("compimage_c1c2_ZY_multiply_non_coinimage", "compimage_c1c2_ZY_multiply_non_coinimage;Z (cm);Y (cm)", 
