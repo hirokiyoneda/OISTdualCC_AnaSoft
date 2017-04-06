@@ -613,6 +613,27 @@ void In_3D_ComptonImager::Make3DImage(){
                         n_z, world_z - world_lz/2.0, world_z + world_lz/2.0,
                         n_y, world_y - world_ly/2.0, world_y + world_ly/2.0
                         );
+
+    for(int i_x = 0; i_x < n_x; ++i_x){
+        for(int i_y = 0; i_y < n_y; ++i_y){
+            for(int i_z = 0; i_z < n_z; ++i_z){
+                TVector3 fillpoint(
+                world_x - world_lx/2.0 + world_lx/n_x*(i_x + 0.5),
+                world_y - world_ly/2.0 + world_ly/n_y*(i_y + 0.5),
+                world_z - world_lz/2.0 + world_lz/n_z*(i_z + 0.5)
+                );
+
+                double weight = 1.0;
+                weight *= CalCompWeight(fillpoint, c1_pos, c1_vecG, c1_costheta, c1_dtheta, e1);
+                weight *= CalCompWeight(fillpoint, c2_pos, c2_vecG, c2_costheta, c2_dtheta, e2);
+
+                tmp_image_3d->Fill(fillpoint.X(), fillpoint.Y(), fillpoint.Z(), weight);
+                tmp_projectionXY_image_3d->Fill(fillpoint.X(), fillpoint.Y(), weight);
+                tmp_projectionZX_image_3d->Fill(fillpoint.Z(), fillpoint.X(), weight);
+                tmp_projectionZY_image_3d->Fill(fillpoint.Z(), fillpoint.Y(), weight);
+            }
+        }
+    }
    
     tmp_image_3d->Scale(1.0/totalweight);
     tmp_projectionXY_image_3d->Scale(1.0/totalweight);
