@@ -39,13 +39,6 @@
             "z":100
         }
     },
-    "PETImage":{
-        "run":0,
-        "bin":{
-            "x":1000,
-            "y":1000
-        }
-    },
     "Normalization":{
         "run":0,
         "bin":{
