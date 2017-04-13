@@ -8,6 +8,8 @@
 - gauss_FWHM depends on photon energy
 ###### v1.1.0_dev by Hiroki Yoneda -- 2017 04 06
 - renormazalition function is added (optional).
+###### v1.2.0_dev by Hiroki Yoneda -- 2017 04 13
+- single camera imager is added.
 --------
 ### install
 ##### install share library
