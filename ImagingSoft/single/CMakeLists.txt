@@ -38,4 +38,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(libInSoft_DIR ${CMAKE_SOURCE_DIR}/../../share/build/src/libInSoft.a)
 include_directories(${CMAKE_SOURCE_DIR}/../../share/include)
 
+option(TESTRUN "only run 10000 events" OFF)
+if(TESTRUN)
+    add_definitions(-DTESTRUN)
+endif()
 add_subdirectory(bin)

@@ -350,9 +350,11 @@ void In_3D_SingleCam_ComptonImager::Run(){
          
 //        ++count;
 //        if(count == 1) break;
-//        if(current_event_num > 100000){
-//            break;
-//        }
+#ifdef TESTRUN
+        if(current_event_num > 10000){
+            break;
+        }
+#endif
     } while (GetNextEvent());
 
 
