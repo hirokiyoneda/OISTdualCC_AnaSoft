@@ -39,6 +39,14 @@
             "z":100
         }
     },
+    "CalARM":{
+        "run":1,
+        "source":{
+            "x":-5.31149e-2,
+            "y":3.01098e-1,
+            "z":0
+        }
+    },
     "Normalization":{
         "run":0,
         "bin":{

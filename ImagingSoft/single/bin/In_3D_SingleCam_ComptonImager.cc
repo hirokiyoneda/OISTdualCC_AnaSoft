@@ -21,17 +21,28 @@ In_3D_SingleCam_ComptonImager::~In_3D_SingleCam_ComptonImager(){
 }
 
 In_3D_SingleCam_ComptonImager::In_3D_SingleCam_ComptonImager(){
+    WarnTESTRUNmode();
     print_div_num = 100;
 }
 
 In_3D_SingleCam_ComptonImager::In_3D_SingleCam_ComptonImager(TString infilename) : TFileMaker("In_3D_ComptonImage.root"){
+    WarnTESTRUNmode();
     ct = new CompTreeReader(infilename);
     SetDefault();
 }
 
 In_3D_SingleCam_ComptonImager::In_3D_SingleCam_ComptonImager(TString infilename, TString outfilename) : TFileMaker(outfilename){
+    WarnTESTRUNmode();
     ct = new CompTreeReader(infilename);
     SetDefault();
+}
+
+void In_3D_SingleCam_ComptonImager::WarnTESTRUNmode(){
+#ifdef TESTRUN
+    cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+    cout << "!!! THIS IS TESTRUN MODE !!!" << endl;
+    cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+#endif
 }
 
 void In_3D_SingleCam_ComptonImager::SaveImage(){
@@ -58,6 +69,11 @@ void In_3D_SingleCam_ComptonImager::SetDefault(){
 
     gauss_FWHM_171keV = AnalysisParameter::GaussFWHM;
     gauss_FWHM_245keV = AnalysisParameter::GaussFWHM;
+
+    boolCalARM = false;
+    source_x = 0.0;
+    source_y = 0.0;
+    source_z = 0.0;
 
     boolNormalization = false;
 
@@ -117,6 +133,14 @@ void In_3D_SingleCam_ComptonImager::PrintPar(){
     cout << "gauss FWHM 171keV : " << gauss_FWHM_171keV << endl;
     cout << "gauss FWHM 245keV : " << gauss_FWHM_245keV << endl;
 
+    if(boolCalARM == true){
+    cout << "source position (cm) : " 
+    << source_x << " "
+    << source_y << " "
+    << source_z << " "
+    << endl;
+    }
+
     if(boolNormalization == true){
     cout << "bins of normalization : " 
     << norm_n_x << " "
@@ -175,6 +199,13 @@ void In_3D_SingleCam_ComptonImager::LoadParameterFile(string parfilename){
     SetGaussFWHM(
         par_tree.get<double>("gaussFWHM.171keV", -1.0),
         par_tree.get<double>("gaussFWHM.245keV", -1.0)
+    );
+
+    SetCalARM(
+        par_tree.get<bool>("CalARM.run", 0),
+        par_tree.get<double>("CalARM.source.x", 0.0),
+        par_tree.get<double>("CalARM.source.y", 0.0),
+        par_tree.get<double>("CalARM.source.z", 0.0)
     );
 
     SetNormPar(
@@ -251,6 +282,13 @@ void In_3D_SingleCam_ComptonImager::SetNormPar( bool boolNormalization, int norm
     this->totalweight_cut_max = totalweight_cut_max;
 }
 
+void In_3D_SingleCam_ComptonImager::SetCalARM(bool boolCalARM, double source_x, double source_y, double source_z){
+    this->boolCalARM = boolCalARM;
+    this->source_x = source_x;
+    this->source_y = source_y;
+    this->source_z = source_z;
+}
+
 void In_3D_SingleCam_ComptonImager::SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage){
     this->boolMake3DImage = boolMake3DImage;
     this->boolMakeCompImage = boolMakeCompImage;
@@ -301,8 +339,6 @@ void In_3D_SingleCam_ComptonImager::Initialize(){
     compimage = new TH2F("compimage", "compimage;X (cm);Y (cm)", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    arm_compimage = new TH1D("arm_compimage", "arm_compimage;ARM (degree);Counts", 360, -180, 180);
-
     outfile->cd("../../");
 
     outfile->mkdir("compimage/ZX");
@@ -322,6 +358,13 @@ void In_3D_SingleCam_ComptonImager::Initialize(){
     outfile->mkdir("energyhist");
     outfile->cd("energyhist");
     ehist = new TH1D("ehist", "ehist;Energy (keV);Counts", 2000, 0, 2000);
+    outfile->cd("../");
+
+    outfile->mkdir("ARM");
+    outfile->cd("ARM");
+    arm_all = new TH1D("arm_all", "arm_all;ARM (degree);Counts", 360, -180, 180);
+    arm_171keV = new TH1D("arm_171keV", "arm_171keV;ARM (degree);Counts", 360, -180, 180);
+    arm_245keV = new TH1D("arm_245keV", "arm_245keV;ARM (degree);Counts", 360, -180, 180);
     outfile->cd("../");
 
     outfile->mkdir("normalization");
@@ -346,6 +389,7 @@ void In_3D_SingleCam_ComptonImager::Run(){
     
         GetExpValue();
         FillEnergy();
+        CalARM();
         MakeImage();
          
 //        ++count;
@@ -410,6 +454,33 @@ void In_3D_SingleCam_ComptonImager::GetExpValue(){
 
 void In_3D_SingleCam_ComptonImager::FillEnergy(){
     ehist->Fill(e);
+}
+
+void In_3D_SingleCam_ComptonImager::CalARM(){
+    if(!boolCalARM) return;
+
+    double costheta, dtheta, e;
+    TVector3 axis, inipos;
+    SetCompImageCalPar(1, costheta, dtheta, axis, inipos, e);
+
+    TVector3 source(source_x, source_y, slice_z);
+    TVector3 light_direction = source - inipos;
+    double thetaGeo = light_direction.Angle(axis);
+    double thetaE =  TMath::ACos(costheta);
+    double diff_angle = 180.0/TMath::Pi()*(thetaGeo-thetaE);
+    
+    switch(check_line(e)){
+        case 1:
+            arm_171keV->Fill(diff_angle);
+            arm_all->Fill(diff_angle);
+            break;
+        case 2:
+            arm_245keV->Fill(diff_angle);
+            arm_all->Fill(diff_angle);
+            break;
+        default:
+            break;
+    }
 }
 
 void In_3D_SingleCam_ComptonImager::MakeImage(){
@@ -522,13 +593,10 @@ void In_3D_SingleCam_ComptonImager::MakeCompImageXY(){
     TH2F *this_compimage = new TH2F("this_compimage", "this_compimage", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    double diff_angle;
 
-    MakeCompImageEachCameraXY(1, this_compimage, diff_angle);
+    MakeCompImageEachCameraXY(1, this_compimage);
 
     compimage->Add(this_compimage);
-
-    arm_compimage->Fill(diff_angle);
 
     delete this_compimage;
 }
@@ -557,7 +625,7 @@ void In_3D_SingleCam_ComptonImager::MakeCompImageZY(){
     delete this_compimage_ZY;
 }
 
-void In_3D_SingleCam_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, double &diff_angle){
+void In_3D_SingleCam_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage){
 	double costheta, dtheta, e;
 	TVector3 axis, inipos;
     SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos, e);
@@ -580,15 +648,6 @@ void In_3D_SingleCam_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *c
             }
         }
     }
-
-//Arm
-    TVector3 source(0,0, slice_z);
-    TVector3 light_direction = source - inipos;
-    double thetaGeo = light_direction.Angle(axis);
-    double thetaE =  TMath::ACos(costheta);
-    diff_angle = 180.0/TMath::Pi()*(thetaGeo-thetaE);
-//    
-//    armhist->Fill(diff_angle);
 }
 
 void In_3D_SingleCam_ComptonImager::MakeCompImageEachCameraZX(int n_cam, TH2F *compimage){

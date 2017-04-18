@@ -56,7 +56,9 @@ class In_3D_SingleCam_ComptonImager : public TFileMaker{
         TH2F *projectionZY_image_3d;
 
         TH2F *compimage;
-        TH1D *arm_compimage;
+        TH1D *arm_all;
+        TH1D *arm_171keV;
+        TH1D *arm_245keV;
 
         TH2F *compimage_ZX;
         TH2F *compimage_ZY;
@@ -83,6 +85,7 @@ class In_3D_SingleCam_ComptonImager : public TFileMaker{
 
         void GetExpValue();
         void FillEnergy();
+        void CalARM();
         void MakeImage();
         void Make3DImage();
         void MakeCompImage();
@@ -90,7 +93,7 @@ class In_3D_SingleCam_ComptonImager : public TFileMaker{
         void MakeCompImageZX();
         void MakeCompImageZY();
 
-        void MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, double &diff_angle);
+        void MakeCompImageEachCameraXY(int n_cam, TH2F *compimage);
         void MakeCompImageEachCameraZX(int n_cam, TH2F *compimage);
         void MakeCompImageEachCameraZY(int n_cam, TH2F *compimage);
 
@@ -102,6 +105,9 @@ class In_3D_SingleCam_ComptonImager : public TFileMaker{
         double gauss_FWHM_245keV;
 
         double totalweight;
+        
+        bool boolCalARM;
+        double source_x, source_y, source_z;
 
         bool boolNormalization;
         int norm_n_x, norm_n_y, norm_n_z;
@@ -113,6 +119,7 @@ class In_3D_SingleCam_ComptonImager : public TFileMaker{
         TH1D *hist_total_weight_aftercut;
 
     protected:
+        void WarnTESTRUNmode();
 
     public:
         ~In_3D_SingleCam_ComptonImager();
@@ -138,6 +145,7 @@ class In_3D_SingleCam_ComptonImager : public TFileMaker{
         void Set3DImageDivision(int n_x, int n_y, int n_z);
         void SetCompImageDivision(int comp_n_x, int comp_n_y, int comp_n_z);
         void SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV);
+        void SetCalARM(bool boolCalARM, double source_x, double source_y, double source_z);
         void SetNormPar( bool boolNormalization, int norm_n_x, int norm_n_y, int norm_n_z, double rescale_factor, double totalweight_cut_min, double totalweight_cut_max);
 
         void SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage);
