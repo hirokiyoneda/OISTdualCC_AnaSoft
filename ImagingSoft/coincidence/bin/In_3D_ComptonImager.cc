@@ -100,6 +100,7 @@ void In_3D_ComptonImager::SetDefault(){
     gauss_FWHM_171keV = AnalysisParameter::GaussFWHM;
     gauss_FWHM_245keV = AnalysisParameter::GaussFWHM;
 
+    boolEnergyCorrection = false;
 
     boolNormalization = false;
 
@@ -183,6 +184,12 @@ void In_3D_ComptonImager::PrintPar(){
     cout << "cut min : " << totalweight_cut_min << endl;
     cout << "cut max : " << totalweight_cut_max << endl;
     }
+
+    if(boolEnergyCorrection == true){
+        cout << "EnergyCorrection : ON" << endl;
+    }else{
+        cout << "EnergyCorrection : OFF" << endl;
+    }
 }
 
 void In_3D_ComptonImager::LoadParameterFile(string parfilename){
@@ -243,6 +250,10 @@ void In_3D_ComptonImager::LoadParameterFile(string parfilename){
     SetGaussFWHM(
         par_tree.get<double>("gaussFWHM.171keV", -1.0),
         par_tree.get<double>("gaussFWHM.245keV", -1.0)
+    );
+
+    SetEnergyCorrection(
+        par_tree.get<bool>("EnergyCorrection.run", 0)
     );
 
     SetNormPar(
@@ -308,6 +319,10 @@ void In_3D_ComptonImager::SetCompImageDivision(int comp_n_x, int comp_n_y, int c
 void In_3D_ComptonImager::SetPETImageDivision(int pet_n_x, int pet_n_y){
     this->pet_n_x = pet_n_x;
     this->pet_n_y = pet_n_y;
+}
+
+void In_3D_ComptonImager::SetEnergyCorrection(bool boolEnergyCorrection){
+    this->boolEnergyCorrection = boolEnergyCorrection;
 }
 
 void In_3D_ComptonImager::SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV){
@@ -473,6 +488,7 @@ void In_3D_ComptonImager::Run(){
     
         GetExpValue();
         FillEnergy();
+        if(boolEnergyCorrection) EnergyCorrection();
         MakeImage();
          
 //        ++count;
@@ -556,11 +572,9 @@ void In_3D_ComptonImager::GetExpValue(){
 
     e2 = ct_c2->GetTotalEnergy();
 	c2_pos = ct_c2->Get_hit1_pos();
-//    c2_pos.SetXYZ(-c2_pos.X() + c2_x, c2_pos.Y() + c2_y, c2_z - c2_pos.Z());
 	c2_costheta = ct_c2->Get_costheta();
 	c2_dtheta = ct_c2->Get_dtheta();
 	c2_vecG = ct_c2->Get_vecG();
-//   c2_vecG.SetXYZ(-c2_vecG.X(), c2_vecG.Y(), - c2_vecG.Z());
 }
 
 void In_3D_ComptonImager::FillEnergy(){
@@ -568,6 +582,52 @@ void In_3D_ComptonImager::FillEnergy(){
     ehist_c2->Fill(e2);
     ehist_c1c2->Fill(e1,e2);
     ehist_sum->Fill(e1+e2);
+}
+
+void In_3D_ComptonImager::EnergyCorrection(){
+    if(CheckFluo(e1) || CheckFluo(e2) ) return;
+
+    double c1_e_first = ct_c1->Get_hit1_energy();
+    double c1_e_second = ct_c1->Get_hit2_energy();
+    double c2_e_first = ct_c2->Get_hit2_energy();
+    double c2_e_second = ct_c2->Get_hit2_energy();
+
+    if(CheckLine(e1) == 2){
+        e1 = In111Constant::EneLine2;
+        if(e2 < In111Constant::EneLine1 + AnalysisParameter::DeltaE){
+            e2 = In111Constant::EneLine1;
+        }
+    }else if(CheckLine(e2) == 2){
+        e2 = In111Constant::EneLine2;
+        if(e1 < In111Constant::EneLine1 + AnalysisParameter::DeltaE){
+            e1 = In111Constant::EneLine1;
+        }
+    }else if(CheckLine(e1) == 1){
+        e1 = In111Constant::EneLine1;
+        if(e2 < In111Constant::EneLine2 + AnalysisParameter::DeltaE){
+            e2 = In111Constant::EneLine2;
+        }
+    }else if(CheckLine(e2) == 1){
+        e2 = In111Constant::EneLine1;
+        if(e1 < In111Constant::EneLine2 + AnalysisParameter::DeltaE){
+            e1 = In111Constant::EneLine2;
+        }
+    }
+
+    EventReconstruction(e1, c1_pos, c1_costheta, c1_dtheta, c1_vecG,
+                        ct_c1->Get_hit1_energy(),
+                        ct_c1->Get_hit2_energy(),
+                        ct_c1->Get_hit1_pos(),
+                        ct_c1->Get_hit2_pos(),
+                        ct_c1->Get_hit1_detector(),
+                        ct_c1->Get_hit2_detector());
+    EventReconstruction(e2, c2_pos, c2_costheta, c2_dtheta, c2_vecG,
+                        ct_c2->Get_hit1_energy(),
+                        ct_c2->Get_hit2_energy(),
+                        ct_c2->Get_hit1_pos(),
+                        ct_c2->Get_hit2_pos(),
+                        ct_c2->Get_hit1_detector(),
+                        ct_c2->Get_hit2_detector());
 }
 
 void In_3D_ComptonImager::MakeImage(){
@@ -909,9 +969,9 @@ void In_3D_ComptonImager::SetCompImageCalPar(int n_cam, double &costheta, double
 
 double In_3D_ComptonImager::CalCompWeight(TVector3 comp_point, TVector3 start_point, TVector3 axis, double costheta, double dtheta, double e){
 	double sigma;
-    if(check_line(e) == 1){
+    if(CheckLine(e) == 1){
 	    sigma = TMath::Pi()/180.0*(gauss_FWHM_171keV/2.355);
-    }else if(check_line(e) == 2){
+    }else if(CheckLine(e) == 2){
 	    sigma = TMath::Pi()/180.0*(gauss_FWHM_245keV/2.355);
     }else{
         cerr << "error in calculation of filling weight." << endl;
@@ -1012,7 +1072,7 @@ bool In_3D_ComptonImager::ThreeDImageFilter(){
 }
 
 bool In_3D_ComptonImager::CompImageFilter(){
-    if(check_line(e1)*check_line(e2) == 2){
+    if(CheckLine(e1)*CheckLine(e2) == 2){
            return true;
     }
     return false;
@@ -1027,11 +1087,22 @@ void In_3D_ComptonImager::SetPrintDivNum(Long64_t print_div_num){
     this->print_div_num = print_div_num;
 }
 
-int In_3D_ComptonImager::check_line(double e){ //0 : no line, 1 : 171 keV, 2 : 245 keV
+int In_3D_ComptonImager::CheckLine(double e){ //0 : no line, 1 : 171 keV, 2 : 245 keV
     if( TMath::Abs(e - In111Constant::EneLine1) < AnalysisParameter::DeltaE ){
         return 1; 
     }else if(TMath::Abs(e - In111Constant::EneLine2) < AnalysisParameter::DeltaE){
         return 2;
     }
+    return 0;
+}
+
+bool In_3D_ComptonImager::CheckFluo(double e){
+    if(TMath::Abs(e - In111Constant::EneFluo) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
+    if(TMath::Abs(e - CdTeConstant::Cd::Ka1) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
+    if(TMath::Abs(e - CdTeConstant::Cd::Ka2) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
+    if(TMath::Abs(e - CdTeConstant::Cd::Kb) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
+    if(TMath::Abs(e - CdTeConstant::Te::Ka1) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
+    if(TMath::Abs(e - CdTeConstant::Te::Ka2) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
+    if(TMath::Abs(e - CdTeConstant::Te::Kb) < AnalysisParameter::DeltaE_for_CheckFluo) return 1;
     return 0;
 }

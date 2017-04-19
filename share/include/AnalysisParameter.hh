@@ -9,6 +9,7 @@ namespace AnalysisParameter{
     const int PrintDivNum = 100;
 
     const double DeltaE = 5.0; 
+    const double DeltaE_for_CheckFluo = 1.5; 
 
     const double CompImageW = 0;
 

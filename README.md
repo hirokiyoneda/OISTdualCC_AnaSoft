@@ -10,6 +10,8 @@
 - renormazalition function is added (optional).
 ###### v1.2.0_dev by Hiroki Yoneda -- 2017 04 13
 - single camera imager is added.
+###### v1.3.0_dev by Hiroki Yoneda -- 2017 04 18
+- use scatterd photons in coin imager
 --------
 ### install
 ##### install share library

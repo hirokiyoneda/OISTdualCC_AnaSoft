@@ -28,6 +28,10 @@
 #include "TFileMaker.hh"
 #include "AnalysisParameter.hh"
 #include "In111Constant.hh"
+#include "CdTeConstant.hh"
+#include "PhysicalConstant.hh"
+
+#include "ComptonEventReconstruction.hh"
 
 using namespace std;
 
@@ -82,7 +86,9 @@ class In_3D_ComptonImager : public TFileMaker{
         TH2D *ehist_c1c2;
 
         double e1, e2;
+
         TVector3 c1_pos, c2_pos;
+
         double c1_costheta, c2_costheta;
         double c1_dtheta, c2_dtheta;
         TVector3 c1_vecG, c2_vecG;
@@ -95,7 +101,8 @@ class In_3D_ComptonImager : public TFileMaker{
         bool ThreeDImageFilter();
         bool CompImageFilter();
         bool PETFilter();
-        int check_line(double e);
+        int CheckLine(double e);
+        bool CheckFluo(double e);
 
         //double CalWeight(TVector3 comp_point, TVector3 start_point, TVector3 vecG, double costheta, double dtheta);
 
@@ -106,6 +113,8 @@ class In_3D_ComptonImager : public TFileMaker{
 
         void GetExpValue();
         void FillEnergy();
+        void EnergyCorrection();
+        void CheckFluo(double c1_e_first, double c1_e_second, double c2_e_first, double c2_e_second);
         void MakeImage();
         void Make3DImage();
         void MakeCompImage();
@@ -126,6 +135,8 @@ class In_3D_ComptonImager : public TFileMaker{
 
         double gauss_FWHM_171keV;
         double gauss_FWHM_245keV;
+
+        bool boolEnergyCorrection;
 
         double totalweight;
 
@@ -166,6 +177,7 @@ class In_3D_ComptonImager : public TFileMaker{
         void SetCompImageDivision(int comp_n_x, int comp_n_y, int comp_n_z);
         void SetPETImageDivision(int pet_n_x, int pet_n_y);
         void SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV);
+        void SetEnergyCorrection(bool boolEnergyCorrection);
         void SetNormPar( bool boolNormalization, int norm_n_x, int norm_n_y, int norm_n_z, double rescale_factor, double totalweight_cut_min, double totalweight_cut_max);
 
         void SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage, bool boolMakePETImage);

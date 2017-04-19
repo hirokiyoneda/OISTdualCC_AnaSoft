@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 add_executable(app_In_3D_ComptonImager
 In_3D_ComptonImager.cc
+ComptonEventReconstruction.cc
 main.cc
 )
 
