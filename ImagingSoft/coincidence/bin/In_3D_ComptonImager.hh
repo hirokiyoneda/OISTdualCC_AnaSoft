@@ -64,7 +64,6 @@ class In_3D_ComptonImager : public TFileMaker{
         TH2F *projectionZY_image_3d;
 
         TH2F *compimage_c1, *compimage_c2;
-        TH1D *arm_compimage_c1, *arm_compimage_c2;
 
         TH2F *compimage_c1_ZX, *compimage_c2_ZX;
         TH2F *compimage_c1_ZY, *compimage_c2_ZY;
@@ -123,7 +122,7 @@ class In_3D_ComptonImager : public TFileMaker{
         void MakeCompImageZY();
 
 //        void MakeCompImageEachCamera(int n_cam, TH2D *compimage, TH1D *armhist);
-        void MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, double &diff_angle);
+        void MakeCompImageEachCameraXY(int n_cam, TH2F *compimage);
         void MakeCompImageEachCameraZX(int n_cam, TH2F *compimage);
         void MakeCompImageEachCameraZY(int n_cam, TH2F *compimage);
 //        void MakeSyncCompImage();
@@ -137,6 +136,10 @@ class In_3D_ComptonImager : public TFileMaker{
         double gauss_FWHM_245keV;
 
         bool boolEnergyCorrection;
+        bool boolTwoLines;
+        bool boolOneLine;
+        bool boolNoLine;
+        bool boolRemoveFluoEvent;
 
         double totalweight;
 
@@ -177,7 +180,7 @@ class In_3D_ComptonImager : public TFileMaker{
         void SetCompImageDivision(int comp_n_x, int comp_n_y, int comp_n_z);
         void SetPETImageDivision(int pet_n_x, int pet_n_y);
         void SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV);
-        void SetEnergyCorrection(bool boolEnergyCorrection);
+        void SetEnergyCorrection(bool boolEnergyCorrection, bool boolTwoLines, bool boolOneLine, bool boolNoLine, bool boolRemoveFluoEvent);
         void SetNormPar( bool boolNormalization, int norm_n_x, int norm_n_y, int norm_n_z, double rescale_factor, double totalweight_cut_min, double totalweight_cut_max);
 
         void SetMakeImageList(bool boolMake3DImage, bool boolMakeCompImage, bool boolMakePETImage);

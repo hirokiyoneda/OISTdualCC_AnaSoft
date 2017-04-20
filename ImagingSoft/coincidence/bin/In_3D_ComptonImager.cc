@@ -1,6 +1,6 @@
 #include "In_3D_ComptonImager.hh"
 
-#define CutPoint
+//#define CutPoint
 
 /*
 -- 2017-02-19 by Hiroki Yoneda 
@@ -186,7 +186,12 @@ void In_3D_ComptonImager::PrintPar(){
     }
 
     if(boolEnergyCorrection == true){
-        cout << "EnergyCorrection : ON" << endl;
+        cout << "EnergyCorrection : ON" << flush;
+        if(boolTwoLines) cout << " --TwoLines" << flush;
+        if(boolOneLine) cout << " --OneLine" << flush;
+        if(boolNoLine) cout << " --NoLine" << flush;
+        if(boolRemoveFluoEvent) cout << " --RemoveFluoEvent" << flush;
+        cout << endl;
     }else{
         cout << "EnergyCorrection : OFF" << endl;
     }
@@ -253,7 +258,11 @@ void In_3D_ComptonImager::LoadParameterFile(string parfilename){
     );
 
     SetEnergyCorrection(
-        par_tree.get<bool>("EnergyCorrection.run", 0)
+        par_tree.get<bool>("EnergyCorrection.run", 0),
+        par_tree.get<bool>("EnergyCorrection.TwoLines", 0),
+        par_tree.get<bool>("EnergyCorrection.OneLine", 0),
+        par_tree.get<bool>("EnergyCorrection.NoLine", 0),
+        par_tree.get<bool>("EnergyCorrection.RemoveFluoEvent", 0)
     );
 
     SetNormPar(
@@ -321,8 +330,12 @@ void In_3D_ComptonImager::SetPETImageDivision(int pet_n_x, int pet_n_y){
     this->pet_n_y = pet_n_y;
 }
 
-void In_3D_ComptonImager::SetEnergyCorrection(bool boolEnergyCorrection){
+void In_3D_ComptonImager::SetEnergyCorrection(bool boolEnergyCorrection, bool boolTwoLines, bool boolOneLine, bool boolNoLine, bool boolRemoveFluoEvent){
     this->boolEnergyCorrection = boolEnergyCorrection;
+    this->boolTwoLines = boolTwoLines;
+    this->boolOneLine = boolOneLine;
+    this->boolNoLine = boolNoLine;
+    this->boolRemoveFluoEvent = boolRemoveFluoEvent;
 }
 
 void In_3D_ComptonImager::SetGaussFWHM(double gauss_FWHM_171keV, double gauss_FWHM_245keV){
@@ -399,18 +412,12 @@ void In_3D_ComptonImager::Initialize(){
 
     outfile->mkdir("compimage/XY");
     outfile->cd("compimage/XY");
-    //compimage_c1 = new TH2D("compimage_c1", "compimage_c1", 
     compimage_c1 = new TH2F("compimage_c1", "compimage_c1;X (cm);Y (cm)", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    arm_compimage_c1 = new TH1D("arm_compimage_c1", "arm_compimage_c1;ARM (degree);Counts", 360, -180, 180);
-
-    //compimage_c2 = new TH2D("compimage_c2", "compimage_c2", 
     compimage_c2 = new TH2F("compimage_c2", "compimage_c2;X (cm);Y (cm)", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    arm_compimage_c2 = new TH1D("arm_compimage_c2", "arm_compimage_c2;ARM (degree);Counts", 360, -180, 180);
-
     compimage_c1c2 = new TH2F("compimage_c1c2", "compimage_c1c2;X (cm);Y (cm)", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
@@ -585,49 +592,85 @@ void In_3D_ComptonImager::FillEnergy(){
 }
 
 void In_3D_ComptonImager::EnergyCorrection(){
-    if(CheckFluo(e1) || CheckFluo(e2) ) return;
-
     double c1_e_first = ct_c1->Get_hit1_energy();
     double c1_e_second = ct_c1->Get_hit2_energy();
-    double c2_e_first = ct_c2->Get_hit2_energy();
+    double c2_e_first = ct_c2->Get_hit1_energy();
     double c2_e_second = ct_c2->Get_hit2_energy();
 
-    if(CheckLine(e1) == 2){
-        e1 = In111Constant::EneLine2;
-        if(e2 < In111Constant::EneLine1 + AnalysisParameter::DeltaE){
-            e2 = In111Constant::EneLine1;
+    int checkline_c1 = CheckLine(e1);
+    int checkline_c2 = CheckLine(e2);
+
+    bool checkfluo_c1 = CheckFluo(c1_e_first) || CheckFluo(c1_e_second);
+    bool checkfluo_c2 = CheckFluo(c2_e_first) || CheckFluo(c2_e_second);
+
+    if(checkline_c1*checkline_c2 == 2){
+        if(boolTwoLines){
+            if(checkline_c1 == 1){
+                e1 = In111Constant::EneLine1;
+                e2 = In111Constant::EneLine2;
+            }else{
+                e1 = In111Constant::EneLine2;
+                e2 = In111Constant::EneLine1;
+            }
+        }else{
+            e1 = 0.0;
+            e2 = 0.0;
         }
-    }else if(CheckLine(e2) == 2){
-        e2 = In111Constant::EneLine2;
-        if(e1 < In111Constant::EneLine1 + AnalysisParameter::DeltaE){
-            e1 = In111Constant::EneLine1;
+    }else if(checkline_c1 > 0 || checkline_c2 > 0){
+        if(boolOneLine){
+            if(checkline_c1 == 1){
+                e1 = In111Constant::EneLine1;
+                e2 = In111Constant::EneLine2;
+            }
+            if(checkline_c1 == 2){
+                e1 = In111Constant::EneLine2;
+                e2 = In111Constant::EneLine1;
+            }
+            if(checkline_c2 == 1){
+                e1 = In111Constant::EneLine2;
+                e2 = In111Constant::EneLine1;
+            }
+            if(checkline_c2 == 2){
+                e1 = In111Constant::EneLine1;
+                e2 = In111Constant::EneLine2;
+            }
+        }else{
+            e1 = 0.0;
+            e2 = 0.0;
         }
-    }else if(CheckLine(e1) == 1){
-        e1 = In111Constant::EneLine1;
-        if(e2 < In111Constant::EneLine2 + AnalysisParameter::DeltaE){
-            e2 = In111Constant::EneLine2;
+    }else{
+        if(boolNoLine){
+            //to do
+        }else{
+            e1 = 0.0;
+            e2 = 0.0;
         }
-    }else if(CheckLine(e2) == 1){
-        e2 = In111Constant::EneLine1;
-        if(e1 < In111Constant::EneLine2 + AnalysisParameter::DeltaE){
-            e1 = In111Constant::EneLine2;
+    }
+    
+    if(boolRemoveFluoEvent){ 
+        if(checkfluo_c1 || checkfluo_c2){
+            e1 = 0.0;
+            e2 = 0.0;
         }
     }
 
     EventReconstruction(e1, c1_pos, c1_costheta, c1_dtheta, c1_vecG,
-                        ct_c1->Get_hit1_energy(),
-                        ct_c1->Get_hit2_energy(),
+                        c1_e_first,
+                        c1_e_second,
                         ct_c1->Get_hit1_pos(),
                         ct_c1->Get_hit2_pos(),
                         ct_c1->Get_hit1_detector(),
-                        ct_c1->Get_hit2_detector());
+                        ct_c1->Get_hit2_detector()
+                        );
+
     EventReconstruction(e2, c2_pos, c2_costheta, c2_dtheta, c2_vecG,
-                        ct_c2->Get_hit1_energy(),
-                        ct_c2->Get_hit2_energy(),
+                        c2_e_first,
+                        c2_e_second,
                         ct_c2->Get_hit1_pos(),
                         ct_c2->Get_hit2_pos(),
                         ct_c2->Get_hit1_detector(),
-                        ct_c2->Get_hit2_detector());
+                        ct_c2->Get_hit2_detector()
+                        );
 }
 
 void In_3D_ComptonImager::MakeImage(){
@@ -761,28 +804,18 @@ void In_3D_ComptonImager::MakeCompImageXY(){
     TH2F *this_compimage_c1 = new TH2F("this_compimage_c1", "this_compimage_c1", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    //TH1D *this_arm_compimage_c1 = new TH1D("this_arm_compimage_c1", "this_arm_compimage_c1", 360, -180, 180);
-    double diff_angle_c1;
-
-    //TH2D *this_compimage_c2 = new TH2D("this_compimage_c2", "this_compimage_c2", 
     TH2F *this_compimage_c2 = new TH2F("this_compimage_c2", "this_compimage_c2", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
-    //TH1D *this_arm_compimage_c2 = new TH1D("this_arm_compimage_c2", "this_arm_compimage_c2", 360, -180, 180);
-    double diff_angle_c2;
-
     TH2F *this_compimage_c1c2 = new TH2F("this_compimage_c1c2", "this_compimage_c1c2", 
             comp_n_x, world_x - world_lx/2.0, world_x + world_lx/2.0, 
             comp_n_y, world_y - world_ly/2.0, world_y + world_ly/2.0);
 
-    MakeCompImageEachCameraXY(1, this_compimage_c1, diff_angle_c1);
-    MakeCompImageEachCameraXY(2, this_compimage_c2, diff_angle_c2);
+    MakeCompImageEachCameraXY(1, this_compimage_c1);
+    MakeCompImageEachCameraXY(2, this_compimage_c2);
 
     compimage_c1->Add(this_compimage_c1);
     compimage_c2->Add(this_compimage_c2);
-
-    arm_compimage_c1->Fill(diff_angle_c1);
-    arm_compimage_c2->Fill(diff_angle_c2);
 
     TH2F add2dhist_c1c2 = (*this_compimage_c1)*(*this_compimage_c2);
 
@@ -791,9 +824,7 @@ void In_3D_ComptonImager::MakeCompImageXY(){
     compimage_c1c2->Add(&add2dhist_c1c2);
 
     delete this_compimage_c1;
-//    delete this_arm_compimage_c1;
     delete this_compimage_c2;
-//    delete this_arm_compimage_c2;
     delete this_compimage_c1c2;
 }
 
@@ -864,7 +895,7 @@ void In_3D_ComptonImager::MakePETImage(){
     image_pet->Fill(x,y);
 }
 
-void In_3D_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, double &diff_angle){
+void In_3D_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage){
 	double costheta, dtheta, e;
 	TVector3 axis, inipos;
     SetCompImageCalPar(n_cam, costheta, dtheta, axis, inipos, e);
@@ -887,15 +918,6 @@ void In_3D_ComptonImager::MakeCompImageEachCameraXY(int n_cam, TH2F *compimage, 
             }
         }
     }
-
-//Arm
-    TVector3 source(0,0, slice_z);
-    TVector3 light_direction = source - inipos;
-    double thetaGeo = light_direction.Angle(axis);
-    double thetaE =  TMath::ACos(costheta);
-    diff_angle = 180.0/TMath::Pi()*(thetaGeo-thetaE);
-//    
-//    armhist->Fill(diff_angle);
 }
 
 void In_3D_ComptonImager::MakeCompImageEachCameraZX(int n_cam, TH2F *compimage){

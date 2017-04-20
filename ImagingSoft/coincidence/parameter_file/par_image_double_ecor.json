@@ -52,7 +52,11 @@
         }
     },
     "EnergyCorrection":{
-        "run":1    
+        "run":1,
+        "TwoLines":1,
+        "OneLine":0,
+        "NoLine":0,
+        "RemoveFluoEvent":0
     },
     "Normalization":{
         "run":0,
@@ -68,7 +72,7 @@
         }
     },
     "gaussFWHM":{
-        "171keV":3.2,
-        "245keV":5.3
+        "171keV":7.90,
+        "245keV":4.73
     }
 }

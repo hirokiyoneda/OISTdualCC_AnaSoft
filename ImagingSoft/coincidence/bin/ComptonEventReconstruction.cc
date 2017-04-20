@@ -2,19 +2,7 @@
 
 void EventReconstruction(double &e, TVector3 &c_pos, double &c_costheta, double &c_dtheta, TVector3 &c_vecG,
 Double_t e_first, Double_t e_second, TVector3 c_pos_first, TVector3 c_pos_second, Short_t c_detector_first, Short_t c_detector_second){
-    if(e_first > GetMaxDepositEnergy(e)){
-        SwapPosition(c_pos_first, c_pos_second);
-        SwapEnergy(e_first, e_second);
-        SwapDetector(c_detector_first, c_detector_second);
-    }else if(e_second > GetMaxDepositEnergy(e)){
-        //do nothing
-    }else if(c_detector_first < 10 & c_detector_second >= 10){
-        //do nothing
-    }else if(c_detector_first >= 10 & c_detector_second < 10){
-        SwapPosition(c_pos_first, c_pos_second);
-        SwapEnergy(e_first, e_second);
-        SwapDetector(c_detector_first, c_detector_second);
-    }else if(e_first > e_second){
+    if(e_first > e_second){
         SwapPosition(c_pos_first, c_pos_second);
         SwapEnergy(e_first, e_second);
         SwapDetector(c_detector_first, c_detector_second);
